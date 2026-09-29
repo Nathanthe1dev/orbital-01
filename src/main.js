@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSpacecraft } from './scene/Spacecraft.js';
 import { createPlanet } from './scene/Planet.js';
-import { HUDController } from './components/HUD.js';
 import { TelemetryEngine } from './simulation/Telemetry.js';
 import { HUDController } from './components/HUD.js';
+import { TerminalController } from './components/Terminal.js';
+import { eventBus } from './core/EventBus.js';
 
-// 1. Scene, Camera & Renderer Setup
+// 1. WebGL Canvas & Scene Setup
 const canvas = document.querySelector('#webgl-canvas');
 const scene = new THREE.Scene();
 
@@ -26,14 +27,14 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-// 2. Interactive Camera Controls
+// 2. Camera Orbit Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.minDistance = 2;
 controls.maxDistance = 25;
 
-// 3. Lighting Setup
+// 3. Lights
 const ambientLight = new THREE.AmbientLight(0x0f172a, 1.5);
 scene.add(ambientLight);
 
@@ -41,12 +42,11 @@ const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
 sunLight.position.set(10, 10, 10);
 scene.add(sunLight);
 
-// Subtle blue rim light from deep space
 const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
 rimLight.position.set(-10, -5, -10);
 scene.add(rimLight);
 
-// 4. Starfield Environment
+// 4. Starfield
 const starCount = 2500;
 const starGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(starCount * 3);
@@ -68,14 +68,23 @@ const starMaterial = new THREE.PointsMaterial({
 const starfield = new THREE.Points(starGeometry, starMaterial);
 scene.add(starfield);
 
-// 5. Instantiate 3D Spacecraft & Planet
+// 5. Instantiate Spacecraft & Planet
 const spacecraft = createSpacecraft();
 scene.add(spacecraft);
 
 const planet = createPlanet();
 scene.add(planet);
 
-// 6. Handle Responsive Window Resizing
+// Wire 3D actions to EventBus events
+eventBus.on('ship:rotate', () => {
+  spacecraft.userData.rotateShip();
+});
+
+eventBus.on('shields:updated', (active) => {
+  spacecraft.userData.toggleShields(active);
+});
+
+// 6. Window Resize Handler
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -83,20 +92,25 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 7. Render Loop
+// 7. Initialize Modules
+const hud = new HUDController();
+const terminal = new TerminalController();
+
+const telemetry = new TelemetryEngine();
+telemetry.start();
+
+HUDController.addLog('Live telemetry and command terminal ready.', 'info');
+
+// 8. Render Loop
 const clock = new THREE.Clock();
 
 function animate() {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update interactive camera controls
   controls.update();
-
-  // Update 3D entity animations
   spacecraft.userData.update(elapsedTime);
   planet.userData.update(elapsedTime);
 
-  // Slow background star rotation
   starfield.rotation.y = elapsedTime * 0.005;
 
   renderer.render(scene, camera);
@@ -104,14 +118,3 @@ function animate() {
 }
 
 animate();
-console.log('ORBITAL-01 // 3D Entities & OrbitControls Active');
-
-// Initialize HUD Controller:
-const hud = new HUDController();
-HUDController.addLog('All orbital UI telemetry panels connected.', 'info');
-
-// Initialize & Start Telemetry Engine
-const telemetry = new TelemetryEngine();
-telemetry.start();
-
-HUDController.addLog('Live telemetry simulation loop active.', 'info');

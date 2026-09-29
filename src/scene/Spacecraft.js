@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 
 export function createSpacecraft() {
   const shipGroup = new THREE.Group();
 
-  // Common Materials
+  // Materials
   const hullMaterial = new THREE.MeshStandardMaterial({
     color: 0x1e293b,
     metalness: 0.8,
@@ -28,26 +29,32 @@ export function createSpacecraft() {
     opacity: 0.85,
   });
 
-  // 1. Central Hull / Fuselage
+  const shieldMaterial = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.0,
+    wireframe: true,
+  });
+
+  // 1. Central Hull
   const hullGeo = new THREE.CylinderGeometry(0.3, 0.45, 2.2, 8);
   const hull = new THREE.Mesh(hullGeo, hullMaterial);
-  hull.rotation.x = Math.PI / 2; // Orient along Z axis
+  hull.rotation.x = Math.PI / 2;
   shipGroup.add(hull);
 
-  // 2. Command Nose Cone
+  // 2. Nose Cone
   const noseGeo = new THREE.ConeGeometry(0.3, 0.8, 8);
   const nose = new THREE.Mesh(noseGeo, detailMaterial);
   nose.rotation.x = -Math.PI / 2;
   nose.position.z = 1.5;
   shipGroup.add(nose);
 
-  // 3. Solar Panel Wings (Port & Starboard)
+  // 3. Wings
   const wingGeo = new THREE.BoxGeometry(2.8, 0.04, 0.6);
   const wings = new THREE.Mesh(wingGeo, panelMaterial);
   wings.position.set(0, 0, -0.2);
   shipGroup.add(wings);
 
-  // Solar Wing Framing Details
   const wingFrameGeo = new THREE.BoxGeometry(2.85, 0.06, 0.08);
   const wingFrame = new THREE.Mesh(wingFrameGeo, detailMaterial);
   wingFrame.position.set(0, 0, -0.2);
@@ -60,26 +67,38 @@ export function createSpacecraft() {
   engine.position.z = -1.3;
   shipGroup.add(engine);
 
-  // 5. Plasma Thruster Engine Glow
+  // 5. Plasma Glow
   const glowGeo = new THREE.ConeGeometry(0.28, 0.9, 8);
   const glow = new THREE.Mesh(glowGeo, engineGlowMaterial);
   glow.rotation.x = -Math.PI / 2;
   glow.position.z = -1.8;
   shipGroup.add(glow);
 
-  // Scale overall vessel to fit scene
+  // 6. Protective Shield Sphere
+  const shieldGeo = new THREE.SphereGeometry(2.0, 16, 16);
+  const shieldMesh = new THREE.Mesh(shieldGeo, shieldMaterial);
+  shipGroup.add(shieldMesh);
+
   shipGroup.scale.set(0.8, 0.8, 0.8);
 
-  // Animation handler for floating pitch/yaw motion
+  // Custom 3D Animation Controls
   shipGroup.userData = {
     update: (elapsedTime) => {
-      // Subtle hover motion in micro-gravity
       shipGroup.position.y = Math.sin(elapsedTime * 0.8) * 0.12;
-      shipGroup.rotation.z = Math.sin(elapsedTime * 0.5) * 0.04;
-      shipGroup.rotation.y = Math.cos(elapsedTime * 0.3) * 0.03;
-
-      // Pulse engine glow opacity
       engineGlowMaterial.opacity = 0.7 + Math.sin(elapsedTime * 6) * 0.2;
+    },
+    rotateShip: () => {
+      gsap.to(shipGroup.rotation, {
+        y: shipGroup.rotation.y + Math.PI * 2,
+        duration: 3,
+        ease: 'power2.inOut'
+      });
+    },
+    toggleShields: (active) => {
+      gsap.to(shieldMaterial, {
+        opacity: active ? 0.35 : 0.0,
+        duration: 0.8
+      });
     }
   };
 

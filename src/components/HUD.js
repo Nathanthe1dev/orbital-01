@@ -27,21 +27,18 @@ export class HUDController {
   }
 
   setupSubscriptions() {
-    // Listen to EventBus for telemetry updates from state store
     eventBus.on('telemetry:updated', ({ key, value }) => {
       let formattedText = `${value.toFixed(1)}%`;
       let percent = value;
 
       if (key === 'temp') {
         formattedText = `${value.toFixed(1)} K`;
-        // Map Kelvin (250K - 350K range) to 0-100% bar width
         percent = ((value - 250) / 100) * 100;
       }
 
       HUDController.updateGauge(key, percent, formattedText);
     });
 
-    // Listen for status message updates
     eventBus.on('status:updated', (statusText) => {
       if (this.statusElement) {
         this.statusElement.textContent = statusText;

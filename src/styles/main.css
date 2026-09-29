@@ -55,6 +55,7 @@ html, body {
   border: 1px solid var(--border-color);
   backdrop-filter: blur(8px);
   border-radius: 4px;
+  pointer-events: auto;
 }
 
 .mission-id {

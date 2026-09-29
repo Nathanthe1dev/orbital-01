@@ -8,7 +8,7 @@ export const initialState = {
     fuel: 84.2,
     signal: 42.0,
     oxygen: 99.1,
-    temp: 294.2, // Kelvin
+    temp: 294.2,
   },
   shieldsActive: false,
   diagnosticsRunning: false
@@ -24,7 +24,6 @@ class StateStore {
   }
 
   updateTelemetry(key, value) {
-    // Clamp values between safe bounds
     if (key === 'temp') {
       this.state.telemetry.temp = Math.max(100, Math.min(500, value));
     } else {
@@ -36,6 +35,11 @@ class StateStore {
       value: this.state.telemetry[key],
       telemetry: this.state.telemetry
     });
+  }
+
+  setShields(active) {
+    this.state.shieldsActive = active;
+    eventBus.emit('shields:updated', active);
   }
 
   setStatus(newStatus) {
