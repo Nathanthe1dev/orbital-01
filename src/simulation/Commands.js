@@ -9,7 +9,11 @@ export class CommandProcessor {
 
     HUDController.addLog(`> ${cmd}`, 'cmd');
 
-    switch (cmd) {
+    const parts = cmd.split(' ');
+    const mainCmd = parts[0];
+    const arg = parts[1];
+
+    switch (mainCmd) {
       case 'HELP':
         HUDController.addLog('AVAILABLE COMMANDS:', 'info');
         HUDController.addLog('  RUN_DIAGNOSTICS  - Run full vessel integrity check', 'info');
@@ -17,6 +21,8 @@ export class CommandProcessor {
         HUDController.addLog('  PING_EARTH       - Transmit ping to Earth ground station', 'info');
         HUDController.addLog('  ROTATE_SHIP      - Execute 360 degree maneuvering maneuver', 'info');
         HUDController.addLog('  ACTIVATE_SHIELDS - Toggle energy deflection shield', 'info');
+        HUDController.addLog('  LOCK_TARGET      - Lock camera onto object (SHIP / PLANET / ANOMALY)', 'info');
+        HUDController.addLog('  CAM_RESET        - Reset camera to default tactical view', 'info');
         HUDController.addLog('  CLEAR            - Clear terminal output buffer', 'info');
         break;
 
@@ -33,7 +39,7 @@ export class CommandProcessor {
         store.updateTelemetry('signal', Math.min(100, currentSignal + 25));
         setTimeout(() => {
           HUDController.addLog('[SCAN] Signal boosted. Dynamic pulse detected at 14.82 GHz!', 'warning');
-          HUDController.addLog('[NARRATIVE] "..." [ENCRYPTED SIGNAL - RECOVERY NEEDED]', 'warning');
+          HUDController.addLog('[NARRATIVE] "ANOMALY-X1 telemetry responding..."', 'warning');
         }, 1000);
         break;
 
@@ -62,6 +68,21 @@ export class CommandProcessor {
         } else {
           HUDController.addLog('[SHIELDS] Deflector shield matrix DISABLED', 'info');
         }
+        break;
+
+      case 'LOCK_TARGET':
+        if (!arg) {
+          HUDController.addLog('USAGE: LOCK_TARGET <SHIP | PLANET | ANOMALY>', 'alert');
+          return;
+        }
+        eventBus.emit('target:lock_by_name', arg);
+        break;
+
+      case 'CAM_RESET':
+      case 'RELEASE_TARGET':
+        eventBus.emit('camera:reset');
+        HUDController.addLog('[TACTICAL] Target lock released. Camera reset to home view.', 'info');
+        store.setStatus('SYSTEM ONLINE');
         break;
 
       case 'CLEAR':
