@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSpacecraft } from './scene/Spacecraft.js';
 import { createPlanet } from './scene/Planet.js';
 import { HUDController } from './components/HUD.js';
+import { TelemetryEngine } from './simulation/Telemetry.js';
+import { HUDController } from './components/HUD.js';
 
 // 1. Scene, Camera & Renderer Setup
 const canvas = document.querySelector('#webgl-canvas');
@@ -107,3 +109,9 @@ console.log('ORBITAL-01 // 3D Entities & OrbitControls Active');
 // Initialize HUD Controller:
 const hud = new HUDController();
 HUDController.addLog('All orbital UI telemetry panels connected.', 'info');
+
+// Initialize & Start Telemetry Engine
+const telemetry = new TelemetryEngine();
+telemetry.start();
+
+HUDController.addLog('Live telemetry simulation loop active.', 'info');

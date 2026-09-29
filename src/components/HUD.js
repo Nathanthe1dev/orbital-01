@@ -1,10 +1,13 @@
+import { eventBus } from '../core/EventBus.js';
+
 export class HUDController {
   constructor() {
     this.startTime = Date.now();
     this.clockElement = document.querySelector('#met-clock');
+    this.statusElement = document.querySelector('#system-status-text');
     
-    // Start live Mission Elapsed Time (MET) counter tick
     this.initClock();
+    this.setupSubscriptions();
   }
 
   initClock() {
@@ -23,7 +26,29 @@ export class HUDController {
     }, 50);
   }
 
-  // Dynamic gauge bar updater helper
+  setupSubscriptions() {
+    // Listen to EventBus for telemetry updates from state store
+    eventBus.on('telemetry:updated', ({ key, value }) => {
+      let formattedText = `${value.toFixed(1)}%`;
+      let percent = value;
+
+      if (key === 'temp') {
+        formattedText = `${value.toFixed(1)} K`;
+        // Map Kelvin (250K - 350K range) to 0-100% bar width
+        percent = ((value - 250) / 100) * 100;
+      }
+
+      HUDController.updateGauge(key, percent, formattedText);
+    });
+
+    // Listen for status message updates
+    eventBus.on('status:updated', (statusText) => {
+      if (this.statusElement) {
+        this.statusElement.textContent = statusText;
+      }
+    });
+  }
+
   static updateGauge(key, valuePercent, formattedText) {
     const valElem = document.querySelector(`#val-${key}`);
     const barElem = document.querySelector(`#bar-${key}`);
@@ -32,7 +57,6 @@ export class HUDController {
     if (barElem) barElem.style.width = `${Math.min(100, Math.max(0, valuePercent))}%`;
   }
 
-  // Add a log entry to the terminal panel
   static addLog(message, type = 'info') {
     const terminal = document.querySelector('#terminal-output');
     if (!terminal) return;
@@ -42,6 +66,6 @@ export class HUDController {
     log.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
 
     terminal.appendChild(log);
-    terminal.scrollTop = terminal.scrollHeight; // Auto-scroll to latest log
+    terminal.scrollTop = terminal.scrollHeight;
   }
 }
