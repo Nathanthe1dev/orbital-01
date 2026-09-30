@@ -206,6 +206,26 @@ export class CommandProcessor {
         HUDController.addLog('[TACTICAL] Asteroid threat grid re-initialized.', 'info');
         break;
 
+      case 'MANUAL_FLIGHT':
+      case 'MANUAL':
+      case 'PILOT':
+        eventBus.emit('flight:manual_toggle', true);
+        HUDController.addLog('[FLIGHT] Manual flight controls ENGAGED. Use WASD / Q / E / Space to maneuver.', 'warning');
+        break;
+
+      case 'AUTOPILOT':
+      case 'AUTO_PILOT':
+        eventBus.emit('flight:manual_toggle', false);
+        HUDController.addLog('[FLIGHT] Manual controls disengaged. Autopilot systems re-engaged.', 'info');
+        break;
+
+      case 'HALT_VESSEL':
+      case 'HALT':
+      case 'BRAKE':
+        eventBus.emit('flight:halt');
+        HUDController.addLog('[FLIGHT] Counter-thrusters fired. Vessel momentum zeroed.', 'alert');
+        break;
+
       default:
         HUDController.addLog(`UNKNOWN COMMAND: '${cmd}'. Type 'HELP' for available commands.`, 'alert');
         break;

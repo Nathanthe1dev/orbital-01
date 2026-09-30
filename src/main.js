@@ -8,6 +8,7 @@ import { createOrbitalTrajectories } from './scene/Trajectory.js';
 import { createThrusterParticles } from './scene/ThrusterParticles.js';
 import { createAsteroidField } from './scene/Asteroids.js';
 import { PlasmaWeaponSystem } from './scene/Weapons.js';
+import { FlightController } from './simulation/FlightController.js';
 import { TelemetryEngine } from './simulation/Telemetry.js';
 import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
@@ -20,7 +21,7 @@ import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
 import './core/SoundFX.js';
 
-// 1. WebGL Setup
+// 1. Canvas & WebGL Setup
 const canvas = document.querySelector('#webgl-canvas');
 const scene = new THREE.Scene();
 
@@ -62,7 +63,7 @@ const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
 rimLight.position.set(-10, -5, -10);
 scene.add(rimLight);
 
-// 3. Background Starfield
+// 3. Starfield Background
 const starCount = 2500;
 const starGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(starCount * 3);
@@ -103,7 +104,8 @@ scene.add(trajectories);
 let asteroidField = createAsteroidField(16);
 scene.add(asteroidField);
 
-// 5. Combat & Weapons System
+// 5. Flight & Combat Mechanics
+const flightController = new FlightController(spacecraft, camera, controls);
 const weaponSystem = new PlasmaWeaponSystem(scene, spacecraft);
 let activeTargetLock = null;
 
@@ -119,35 +121,29 @@ eventBus.on('hazards:respawn', () => {
   scene.add(asteroidField);
 });
 
-// 6. Subsystems Initialization
+// 6. Subsystem Controllers
 const warpDrive = new WarpDriveManager(camera, starfield);
 eventBus.on('warp:engage', () => warpDrive.engage());
 eventBus.on('warp:disengage', () => warpDrive.disengage());
 eventBus.on('thruster:boost', (mult) => thrusterParticles.userData.setBoost(mult));
 
-// Radar Tracking Integration
 const radar = new RadarController('#radar-canvas', () => {
   const contacts = [
     { object: spacecraft, color: '#38bdf8', size: 4 },
     { object: planet, color: '#22c55e', size: 5 },
     { object: anomaly, color: '#f59e0b', size: 3 }
   ];
-
-  // Safely push visible asteroid hazards
   if (asteroidField && asteroidField.userData.asteroids) {
     asteroidField.userData.asteroids.forEach((ast) => {
-      if (ast.visible) {
-        contacts.push({ object: ast, color: '#ef4444', size: 2.5 });
-      }
+      if (ast.visible) contacts.push({ object: ast, color: '#ef4444', size: 2.5 });
     });
   }
-
   return contacts;
-}, 35); // 35 AU Range to fit 12-30 AU orbital paths
+}, 35);
 
 new InspectorModalController();
 
-// 7. Raycaster & Target Selection
+// 7. Raycasting & Locking
 const interactiveObjects = [spacecraft, planet, anomaly, ...asteroidField.userData.asteroids];
 initRaycaster(camera, canvas, interactiveObjects);
 
@@ -188,7 +184,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Plasma defense system & asteroid threat field online.', 'info');
+HUDController.addLog('Flight steering physics & manual navigation online.', 'info');
 
 const clock = new THREE.Clock();
 
@@ -197,7 +193,13 @@ function animate() {
   const elapsedTime = clock.getElapsedTime();
 
   controls.update();
-  spacecraft.userData.update(elapsedTime);
+
+  // Update Ship & Systems
+  if (!flightController.enabled) {
+    spacecraft.userData.update(elapsedTime);
+  }
+  flightController.update(delta);
+
   thrusterParticles.userData.update(elapsedTime);
   planet.userData.update(elapsedTime);
   anomaly.userData.update(elapsedTime);
