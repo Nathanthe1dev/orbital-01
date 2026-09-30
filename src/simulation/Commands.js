@@ -35,6 +35,9 @@ export class CommandProcessor {
         HUDController.addLog('  CLEAR_ALERT      - Disengage emergency protocol', 'info');
         HUDController.addLog('  MUTE / UNMUTE    - Toggle sound synthesizer audio', 'info');
         HUDController.addLog('  CLEAR            - Clear terminal output buffer', 'info');
+        HUDController.addLog('  FIRE / ENGAGE    - Discharge forward plasma cannons', 'info');
+        HUDController.addLog('  AUTO_DEFENSE     - Toggle automated threat tracking', 'info');
+        HUDController.addLog('  SPAWN_HAZARDS    - Respawn asteroid debris hazards', 'info');
         break;
 
       case 'INSPECT_TARGET':
@@ -181,6 +184,26 @@ export class CommandProcessor {
       case 'CLEAR':
         const terminal = document.querySelector('#terminal-output');
         if (terminal) terminal.innerHTML = '';
+        break;
+
+      case 'FIRE':
+      case 'FIRE_WEAPONS':
+        eventBus.emit('weapons:fire');
+        break;
+
+      case 'ENGAGE_TARGET':
+      case 'ENGAGE':
+        eventBus.emit('weapons:engage_locked');
+        break;
+
+      case 'AUTO_DEFENSE':
+        eventBus.emit('weapons:auto_defense');
+        HUDController.addLog('[DEFENSE] Automated countermeasure system active.', 'warning');
+        break;
+
+      case 'SPAWN_HAZARDS':
+        eventBus.emit('hazards:respawn');
+        HUDController.addLog('[TACTICAL] Asteroid threat grid re-initialized.', 'info');
         break;
 
       default:

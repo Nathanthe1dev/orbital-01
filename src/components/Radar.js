@@ -1,91 +1,121 @@
+import * as THREE from 'three';
+
 export class RadarController {
-  constructor(canvasId, entitiesGetter) {
-    this.canvas = document.querySelector(canvasId);
+  constructor(canvasSelector, getContactsCallback, range = 35) {
+    this.canvas = document.querySelector(canvasSelector);
     if (!this.canvas) return;
-
     this.ctx = this.canvas.getContext('2d');
-    this.getEntities = entitiesGetter;
-    this.angle = 0;
+    this.getContacts = getContactsCallback;
+    this.range = range; // Max range in AU (covers asteroids up to 30 AU)
     this.visible = true;
+    this.sweepAngle = 0;
 
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
+    this.resizeCanvas();
   }
 
-  resize() {
+  resizeCanvas() {
     if (!this.canvas) return;
-    this.canvas.width = 160;
-    this.canvas.height = 160;
-    this.radius = this.canvas.width / 2;
+    this.canvas.width = 140;
+    this.canvas.height = 140;
   }
 
   toggle() {
     this.visible = !this.visible;
     const container = document.querySelector('#radar-container');
-    if (container) container.style.display = this.visible ? 'block' : 'none';
+    if (container) {
+      container.style.display = this.visible ? 'flex' : 'none';
+    }
   }
 
   update() {
     if (!this.visible || !this.ctx) return;
 
-    const ctx = this.ctx;
     const width = this.canvas.width;
     const height = this.canvas.height;
-    const center = width / 2;
-    const scale = 8; // World units to radar pixels ratio
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = width / 2 - 6;
 
-    // 1. Clear & Draw Background Grid
-    ctx.clearRect(0, 0, width, height);
+    // Clear Previous Frame
+    this.ctx.clearRect(0, 0, width, height);
 
-    ctx.beginPath();
-    ctx.arc(center, center, center - 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    // 1. Outer Radar Grid Circle
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    this.ctx.fill();
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.stroke();
 
-    // Concentric Range Rings
-    [0.3, 0.65].forEach(r => {
-      ctx.beginPath();
-      ctx.arc(center, center, (center - 2) * r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+    // 2. Concentric Range Rings
+    [0.33, 0.66].forEach((rRatio) => {
+      this.ctx.beginPath();
+      this.ctx.arc(centerX, centerY, radius * rRatio, 0, Math.PI * 2);
+      this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke();
     });
 
-    // Crosshairs
-    ctx.beginPath();
-    ctx.moveTo(center, 0); ctx.lineTo(center, height);
-    ctx.moveTo(0, center); ctx.lineTo(width, center);
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
-    ctx.stroke();
+    // 3. Tactical Crosshairs
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX, centerY - radius);
+    this.ctx.lineTo(centerX, centerY + radius);
+    this.ctx.moveTo(centerX - radius, centerY);
+    this.ctx.lineTo(centerX + radius, centerY);
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+    this.ctx.stroke();
 
-    // 2. Dynamic Radar Sweep Line
-    this.angle += 0.04;
-    ctx.beginPath();
-    ctx.moveTo(center, center);
-    ctx.arc(center, center, center - 2, this.angle, this.angle + 0.2);
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-    ctx.fill();
+    // 4. Rotating Radar Sweep Beam
+    this.sweepAngle += 0.03;
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX, centerY);
+    this.ctx.arc(
+      centerX,
+      centerY,
+      radius,
+      this.sweepAngle,
+      this.sweepAngle + 0.35
+    );
+    this.ctx.closePath();
+    const sweepGradient = this.ctx.createRadialGradient(
+      centerX, centerY, 0,
+      centerX, centerY, radius
+    );
+    sweepGradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+    sweepGradient.addColorStop(1, 'rgba(56, 189, 248, 0.03)');
+    this.ctx.fillStyle = sweepGradient;
+    this.ctx.fill();
 
-    // 3. Render Object Contact Blips
-    const entities = this.getEntities();
-    entities.forEach(item => {
-      const pos = item.object.position;
-      const radarX = center + pos.x * scale;
-      const radarY = center + pos.z * scale;
+    // 5. Draw Target Contacts / Blips
+    const contacts = this.getContacts ? this.getContacts() : [];
+    const worldPos = new THREE.Vector3();
 
-      // Stay within radar boundaries
-      const dist = Math.hypot(radarX - center, radarY - center);
-      if (dist < center - 4) {
-        ctx.beginPath();
-        ctx.arc(radarX, radarY, item.size || 3, 0, Math.PI * 2);
-        ctx.fillStyle = item.color || '#38bdf8';
-        ctx.shadowColor = item.color || '#38bdf8';
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+    contacts.forEach((contact) => {
+      if (!contact.object || contact.object.visible === false) return;
+
+      // Obtain global 3D world coordinates
+      contact.object.getWorldPosition(worldPos);
+
+      // Normalize coordinates against radar max range
+      const normX = worldPos.x / this.range;
+      const normZ = worldPos.z / this.range;
+
+      const blipX = centerX + normX * radius;
+      const blipY = centerY + normZ * radius;
+
+      // Calculate distance from radar center
+      const distFromCenter = Math.hypot(blipX - centerX, blipY - centerY);
+
+      // Render blip if within radar circle bounds
+      if (distFromCenter <= radius - 2) {
+        this.ctx.beginPath();
+        this.ctx.arc(blipX, blipY, contact.size || 3, 0, Math.PI * 2);
+        this.ctx.fillStyle = contact.color || '#38bdf8';
+        this.ctx.shadowColor = contact.color || '#38bdf8';
+        this.ctx.shadowBlur = 6;
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0; // Reset shadow for line passes
       }
     });
   }
