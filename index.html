@@ -24,12 +24,7 @@
     </div>
 
     <!-- UI HUD Overlay Container -->
-    <div id="app-hud">
-      <div id="radar-container" class="hud-panel">
-        <div class="radar-header">TACTICAL RADAR</div>
-          <canvas id="radar-canvas"></canvas>
-      </div>
-      
+    <div id="app-hud">      
       <!-- Top Control Header -->
       <header class="hud-header">
         <div class="header-section">
@@ -132,6 +127,28 @@
           </form>
         </div>
       </footer>
+      
+      <div id="radar-container" class="hud-panel">
+        <div class="radar-header">TACTICAL RADAR</div>
+          <canvas id="radar-canvas"></canvas>
+      </div>
+
+      <div id="inspector-modal" class="hud-panel modal-overlay">
+        <div class="modal-header">
+          <span class="modal-tag">// TACTICAL TARGET INSPECTOR</span>
+          <button id="inspector-close-btn" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <h2 id="inspector-title">TARGET NAME</h2>
+          <div class="modal-meta">
+            <span id="inspector-type">CLASS: UNKNOWN</span>
+            <span id="inspector-distance">DISTANCE: -- AU</span>
+          </div>
+          <p id="inspector-details" class="modal-description">
+            Awaiting target analysis data...
+          </p>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.js"></script>

@@ -10,7 +10,9 @@ import { TelemetryEngine } from './simulation/Telemetry.js';
 import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
 import { RadarController } from './components/Radar.js';
+import { InspectorModalController } from './components/InspectorModal.js';
 import { WarpDriveManager } from './simulation/WarpDrive.js';
+import { initPostProcessing } from './core/PostProcessing.js';
 import { initRaycaster } from './core/Raycaster.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
@@ -36,6 +38,18 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// Post-Processing Bloom Engine
+const postProcessing = initPostProcessing(renderer, scene, camera);
+
+eventBus.on('bloom:toggle', () => {
+  const active = postProcessing.toggleBloom();
+  HUDController.addLog(`[VISUALS] Post-processing bloom ${active ? 'ENABLED' : 'DISABLED'}`, 'info');
+});
+
+eventBus.on('bloom:intensity', (val) => {
+  postProcessing.setIntensity(val);
+});
 
 // 2. Camera Controls
 const controls = new OrbitControls(camera, canvas);
@@ -79,13 +93,17 @@ scene.add(starfield);
 // 5. Instantiate Entities
 const spacecraft = createSpacecraft();
 spacecraft.userData.name = 'ORBITAL-01 (FLAGSHIP)';
+spacecraft.userData.type = 'EXPLORATION CRUISER';
+spacecraft.userData.distance = '0.00 AU';
 scene.add(spacecraft);
 
 const thrusterParticles = createThrusterParticles();
-spacecraft.add(thrusterParticles); // Attach thruster directly to ship
+spacecraft.add(thrusterParticles);
 
 const planet = createPlanet();
 planet.userData.name = 'KEPLER-186F (CELESTIAL)';
+planet.userData.type = 'TERRESTRIAL EXOPLANET';
+planet.userData.distance = '14.82 AU';
 scene.add(planet);
 
 const anomaly = createAnomaly();
@@ -94,20 +112,29 @@ scene.add(anomaly);
 const trajectories = createOrbitalTrajectories();
 scene.add(trajectories);
 
-// 6. Hyperdrive & Radar Initialization
+// 6. Systems Initialization
 const warpDrive = new WarpDriveManager(camera, starfield);
-
 eventBus.on('warp:engage', () => warpDrive.engage());
 eventBus.on('warp:disengage', () => warpDrive.disengage());
-eventBus.on('thruster:boost', (multiplier) => thrusterParticles.userData.setBoost(multiplier));
+eventBus.on('thruster:boost', (mult) => thrusterParticles.userData.setBoost(mult));
 
 const radar = new RadarController('#radar-canvas', () => [
   { object: spacecraft, color: '#38bdf8', size: 4 },
   { object: planet, color: '#22c55e', size: 6 },
   { object: anomaly, color: '#f59e0b', size: 3 }
 ]);
-
 eventBus.on('radar:toggle', () => radar.toggle());
+
+new InspectorModalController();
+
+// Inspector commands trigger
+eventBus.on('target:inspect_by_name', (query) => {
+  const q = query.toLowerCase();
+  if (q.includes('ship')) eventBus.emit('target:inspect', spacecraft);
+  else if (q.includes('planet')) eventBus.emit('target:inspect', planet);
+  else if (q.includes('anomaly')) eventBus.emit('target:inspect', anomaly);
+  else HUDController.addLog(`Inspection target '${query}' not found in tactical range.`, 'alert');
+});
 
 // 7. Raycasting Interactivity
 const interactiveObjects = [spacecraft, planet, anomaly];
@@ -138,7 +165,11 @@ function focusTarget(target) {
   });
 }
 
-eventBus.on('target:selected', (target) => focusTarget(target));
+eventBus.on('target:selected', (target) => {
+  focusTarget(target);
+  eventBus.emit('target:inspect', target); // Open modal on target click
+});
+
 eventBus.on('target:lock_by_name', (query) => {
   const q = query.toLowerCase();
   if (q.includes('ship')) focusTarget(spacecraft);
@@ -167,6 +198,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  postProcessing.resize(window.innerWidth, window.innerHeight);
 });
 
 // 8. Initialize Modules & Render Loop
@@ -176,7 +208,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Particle thrusters, 2D Radar, and Hyperdrive Warp core online.', 'info');
+HUDController.addLog('Unreal Bloom post-processing and Target Inspector modal online.', 'info');
 
 const clock = new THREE.Clock();
 
@@ -195,7 +227,8 @@ function animate() {
     starfield.rotation.y = elapsedTime * 0.005;
   }
 
-  renderer.render(scene, camera);
+  // Render through EffectComposer instead of standard renderer
+  postProcessing.composer.render();
   requestAnimationFrame(animate);
 }
 

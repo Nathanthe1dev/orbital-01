@@ -23,6 +23,10 @@ export class CommandProcessor {
         HUDController.addLog('  ROTATE_SHIP      - Execute 360 degree maneuvering maneuver', 'info');
         HUDController.addLog('  ACTIVATE_SHIELDS - Toggle energy deflection shield', 'info');
         HUDController.addLog('  LOCK_TARGET      - Lock camera onto object (SHIP | PLANET | ANOMALY)', 'info');
+        HUDController.addLog('  INSPECT_TARGET   - Open inspection modal (SHIP | PLANET | ANOMALY)', 'info');
+        HUDController.addLog('  CLOSE_INSPECTOR  - Close current inspection modal', 'info');
+        HUDController.addLog('  TOGGLE_BLOOM     - Toggle post-processing bloom effect', 'info');
+        HUDController.addLog('  BLOOM_INTENSITY  - Set bloom brightness (e.g. BLOOM_INTENSITY 1.5)', 'info');
         HUDController.addLog('  WARP_SPEED       - Engage hyperdrive warp propulsion', 'info');
         HUDController.addLog('  DISENGAGE_WARP   - Drop out of warp speed', 'info');
         HUDController.addLog('  THRUST_BOOST     - Increase thruster plasma exhaust output', 'info');
@@ -31,6 +35,35 @@ export class CommandProcessor {
         HUDController.addLog('  CLEAR_ALERT      - Disengage emergency protocol', 'info');
         HUDController.addLog('  MUTE / UNMUTE    - Toggle sound synthesizer audio', 'info');
         HUDController.addLog('  CLEAR            - Clear terminal output buffer', 'info');
+        break;
+
+      case 'INSPECT_TARGET':
+      case 'INSPECT':
+        if (!arg) {
+          HUDController.addLog('USAGE: INSPECT_TARGET <SHIP | PLANET | ANOMALY>', 'alert');
+          return;
+        }
+        eventBus.emit('target:inspect_by_name', arg);
+        break;
+
+      case 'CLOSE_INSPECTOR':
+      case 'CLOSE':
+        eventBus.emit('target:inspect_close');
+        break;
+
+      case 'TOGGLE_BLOOM':
+      case 'BLOOM':
+        eventBus.emit('bloom:toggle');
+        break;
+
+      case 'BLOOM_INTENSITY':
+        const val = parseFloat(arg);
+        if (!isNaN(val)) {
+          eventBus.emit('bloom:intensity', val);
+          HUDController.addLog(`[VISUALS] Bloom intensity set to ${val}`, 'info');
+        } else {
+          HUDController.addLog('USAGE: BLOOM_INTENSITY <NUMBER (e.g., 0.5 - 2.0)>', 'alert');
+        }
         break;
 
       case 'WARP_SPEED':
@@ -153,6 +186,7 @@ export class CommandProcessor {
       default:
         HUDController.addLog(`UNKNOWN COMMAND: '${cmd}'. Type 'HELP' for available commands.`, 'alert');
         break;
+
     }
   }
 }
