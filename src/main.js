@@ -5,13 +5,16 @@ import { createSpacecraft } from './scene/Spacecraft.js';
 import { createPlanet } from './scene/Planet.js';
 import { createAnomaly } from './scene/Anomaly.js';
 import { createOrbitalTrajectories } from './scene/Trajectory.js';
+import { createThrusterParticles } from './scene/ThrusterParticles.js';
 import { TelemetryEngine } from './simulation/Telemetry.js';
 import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
+import { RadarController } from './components/Radar.js';
+import { WarpDriveManager } from './simulation/WarpDrive.js';
 import { initRaycaster } from './core/Raycaster.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
-import './core/SoundFX.js'; // Autoload audio subscriber
+import './core/SoundFX.js';
 
 // 1. WebGL Canvas & Scene Setup
 const canvas = document.querySelector('#webgl-canvas');
@@ -78,6 +81,9 @@ const spacecraft = createSpacecraft();
 spacecraft.userData.name = 'ORBITAL-01 (FLAGSHIP)';
 scene.add(spacecraft);
 
+const thrusterParticles = createThrusterParticles();
+spacecraft.add(thrusterParticles); // Attach thruster directly to ship
+
 const planet = createPlanet();
 planet.userData.name = 'KEPLER-186F (CELESTIAL)';
 scene.add(planet);
@@ -88,12 +94,22 @@ scene.add(anomaly);
 const trajectories = createOrbitalTrajectories();
 scene.add(trajectories);
 
-// Toggle Trajectories
-eventBus.on('trajectory:toggle', () => {
-  trajectories.visible = !trajectories.visible;
-});
+// 6. Hyperdrive & Radar Initialization
+const warpDrive = new WarpDriveManager(camera, starfield);
 
-// 6. Raycasting Interactivity
+eventBus.on('warp:engage', () => warpDrive.engage());
+eventBus.on('warp:disengage', () => warpDrive.disengage());
+eventBus.on('thruster:boost', (multiplier) => thrusterParticles.userData.setBoost(multiplier));
+
+const radar = new RadarController('#radar-canvas', () => [
+  { object: spacecraft, color: '#38bdf8', size: 4 },
+  { object: planet, color: '#22c55e', size: 6 },
+  { object: anomaly, color: '#f59e0b', size: 3 }
+]);
+
+eventBus.on('radar:toggle', () => radar.toggle());
+
+// 7. Raycasting Interactivity
 const interactiveObjects = [spacecraft, planet, anomaly];
 initRaycaster(camera, canvas, interactiveObjects);
 
@@ -123,7 +139,6 @@ function focusTarget(target) {
 }
 
 eventBus.on('target:selected', (target) => focusTarget(target));
-
 eventBus.on('target:lock_by_name', (query) => {
   const q = query.toLowerCase();
   if (q.includes('ship')) focusTarget(spacecraft);
@@ -143,7 +158,6 @@ eventBus.on('camera:reset', () => {
   });
 });
 
-// 3D Ship Actions
 eventBus.on('ship:rotate', () => spacecraft.userData.rotateShip());
 eventBus.on('shields:updated', (active) => spacecraft.userData.toggleShields(active));
 
@@ -155,16 +169,15 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 7. Initialize Modules
+// 8. Initialize Modules & Render Loop
 new HUDController();
 new TerminalController();
 
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Audio synthesizer, CRT scanlines, and orbital trajectory systems online.', 'info');
+HUDController.addLog('Particle thrusters, 2D Radar, and Hyperdrive Warp core online.', 'info');
 
-// 8. Render Loop
 const clock = new THREE.Clock();
 
 function animate() {
@@ -172,14 +185,18 @@ function animate() {
 
   controls.update();
   spacecraft.userData.update(elapsedTime);
+  thrusterParticles.userData.update(elapsedTime);
   planet.userData.update(elapsedTime);
   anomaly.userData.update(elapsedTime);
   trajectories.userData.update(elapsedTime);
+  radar.update();
 
-  starfield.rotation.y = elapsedTime * 0.005;
+  if (!warpDrive.isWarping) {
+    starfield.rotation.y = elapsedTime * 0.005;
+  }
 
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
-animate(); 
+animate();

@@ -23,12 +23,40 @@ export class CommandProcessor {
         HUDController.addLog('  ROTATE_SHIP      - Execute 360 degree maneuvering maneuver', 'info');
         HUDController.addLog('  ACTIVATE_SHIELDS - Toggle energy deflection shield', 'info');
         HUDController.addLog('  LOCK_TARGET      - Lock camera onto object (SHIP | PLANET | ANOMALY)', 'info');
-        HUDController.addLog('  CAM_RESET        - Reset camera to default tactical view', 'info');
+        HUDController.addLog('  WARP_SPEED       - Engage hyperdrive warp propulsion', 'info');
+        HUDController.addLog('  DISENGAGE_WARP   - Drop out of warp speed', 'info');
+        HUDController.addLog('  THRUST_BOOST     - Increase thruster plasma exhaust output', 'info');
+        HUDController.addLog('  TOGGLE_RADAR     - Toggle 2D radar minimap visibility', 'info');
         HUDController.addLog('  RED_ALERT        - Engage vessel emergency status & sirens', 'info');
         HUDController.addLog('  CLEAR_ALERT      - Disengage emergency protocol', 'info');
-        HUDController.addLog('  TOGGLE_TRAJECTORY- Toggle 3D orbital trajectory lines', 'info');
         HUDController.addLog('  MUTE / UNMUTE    - Toggle sound synthesizer audio', 'info');
         HUDController.addLog('  CLEAR            - Clear terminal output buffer', 'info');
+        break;
+
+      case 'WARP_SPEED':
+      case 'WARP':
+        eventBus.emit('warp:engage');
+        break;
+
+      case 'DISENGAGE_WARP':
+      case 'DROPOUT':
+        eventBus.emit('warp:disengage');
+        break;
+
+      case 'THRUST_BOOST':
+      case 'BOOST':
+        eventBus.emit('thruster:boost', 2.5);
+        HUDController.addLog('[ENGINES] Thruster output boosted to 250% capacity.', 'warning');
+        setTimeout(() => {
+          eventBus.emit('thruster:boost', 1.0);
+          HUDController.addLog('[ENGINES] Thruster output returned to standard cruise.', 'info');
+        }, 4000);
+        break;
+
+      case 'TOGGLE_RADAR':
+      case 'RADAR':
+        eventBus.emit('radar:toggle');
+        HUDController.addLog('[TACTICAL] Toggled 2D Radar Minimap.', 'info');
         break;
 
       case 'RUN_DIAGNOSTICS':
@@ -104,12 +132,6 @@ export class CommandProcessor {
         store.setStatus('SYSTEM ONLINE');
         eventBus.emit('alert:clear');
         HUDController.addLog('[ALERT] Emergency protocol disengaged. Systems normal.', 'success');
-        break;
-
-      case 'TOGGLE_TRAJECTORY':
-      case 'TRAJECTORY':
-        eventBus.emit('trajectory:toggle');
-        HUDController.addLog('[TACTICAL] Toggled orbital trajectory visualization.', 'info');
         break;
 
       case 'MUTE':
