@@ -4,12 +4,14 @@ import gsap from 'gsap';
 import { createSpacecraft } from './scene/Spacecraft.js';
 import { createPlanet } from './scene/Planet.js';
 import { createAnomaly } from './scene/Anomaly.js';
+import { createOrbitalTrajectories } from './scene/Trajectory.js';
 import { TelemetryEngine } from './simulation/Telemetry.js';
 import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
 import { initRaycaster } from './core/Raycaster.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
+import './core/SoundFX.js'; // Autoload audio subscriber
 
 // 1. WebGL Canvas & Scene Setup
 const canvas = document.querySelector('#webgl-canvas');
@@ -83,11 +85,18 @@ scene.add(planet);
 const anomaly = createAnomaly();
 scene.add(anomaly);
 
+const trajectories = createOrbitalTrajectories();
+scene.add(trajectories);
+
+// Toggle Trajectories
+eventBus.on('trajectory:toggle', () => {
+  trajectories.visible = !trajectories.visible;
+});
+
 // 6. Raycasting Interactivity
 const interactiveObjects = [spacecraft, planet, anomaly];
 initRaycaster(camera, canvas, interactiveObjects);
 
-// Function to focus camera on target
 function focusTarget(target) {
   const targetPos = new THREE.Vector3();
   target.getWorldPosition(targetPos);
@@ -113,9 +122,7 @@ function focusTarget(target) {
   });
 }
 
-eventBus.on('target:selected', (target) => {
-  focusTarget(target);
-});
+eventBus.on('target:selected', (target) => focusTarget(target));
 
 eventBus.on('target:lock_by_name', (query) => {
   const q = query.toLowerCase();
@@ -136,7 +143,7 @@ eventBus.on('camera:reset', () => {
   });
 });
 
-// Wire 3D actions
+// 3D Ship Actions
 eventBus.on('ship:rotate', () => spacecraft.userData.rotateShip());
 eventBus.on('shields:updated', (active) => spacecraft.userData.toggleShields(active));
 
@@ -155,7 +162,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Tactical radar raycaster online. Click any 3D object to lock target.', 'info');
+HUDController.addLog('Audio synthesizer, CRT scanlines, and orbital trajectory systems online.', 'info');
 
 // 8. Render Loop
 const clock = new THREE.Clock();
@@ -167,6 +174,7 @@ function animate() {
   spacecraft.userData.update(elapsedTime);
   planet.userData.update(elapsedTime);
   anomaly.userData.update(elapsedTime);
+  trajectories.userData.update(elapsedTime);
 
   starfield.rotation.y = elapsedTime * 0.005;
 
@@ -174,4 +182,4 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-animate();
+animate(); 

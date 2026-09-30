@@ -1,6 +1,7 @@
 import { store } from '../core/State.js';
 import { eventBus } from '../core/EventBus.js';
 import { HUDController } from '../components/HUD.js';
+import { soundFX } from '../core/SoundFX.js';
 
 export class CommandProcessor {
   static execute(rawCmd) {
@@ -21,8 +22,12 @@ export class CommandProcessor {
         HUDController.addLog('  PING_EARTH       - Transmit ping to Earth ground station', 'info');
         HUDController.addLog('  ROTATE_SHIP      - Execute 360 degree maneuvering maneuver', 'info');
         HUDController.addLog('  ACTIVATE_SHIELDS - Toggle energy deflection shield', 'info');
-        HUDController.addLog('  LOCK_TARGET      - Lock camera onto object (SHIP / PLANET / ANOMALY)', 'info');
+        HUDController.addLog('  LOCK_TARGET      - Lock camera onto object (SHIP | PLANET | ANOMALY)', 'info');
         HUDController.addLog('  CAM_RESET        - Reset camera to default tactical view', 'info');
+        HUDController.addLog('  RED_ALERT        - Engage vessel emergency status & sirens', 'info');
+        HUDController.addLog('  CLEAR_ALERT      - Disengage emergency protocol', 'info');
+        HUDController.addLog('  TOGGLE_TRAJECTORY- Toggle 3D orbital trajectory lines', 'info');
+        HUDController.addLog('  MUTE / UNMUTE    - Toggle sound synthesizer audio', 'info');
         HUDController.addLog('  CLEAR            - Clear terminal output buffer', 'info');
         break;
 
@@ -83,6 +88,39 @@ export class CommandProcessor {
         eventBus.emit('camera:reset');
         HUDController.addLog('[TACTICAL] Target lock released. Camera reset to home view.', 'info');
         store.setStatus('SYSTEM ONLINE');
+        break;
+
+      case 'RED_ALERT':
+      case 'ALERT':
+        document.body.classList.add('red-alert');
+        store.setStatus('EMERGENCY // RED ALERT');
+        eventBus.emit('alert:start');
+        HUDController.addLog('[ALERT] CRITICAL WARNING: RED ALERT PROTOCOL ENGAGED!', 'alert');
+        break;
+
+      case 'CLEAR_ALERT':
+      case 'NORMAL':
+        document.body.classList.remove('red-alert');
+        store.setStatus('SYSTEM ONLINE');
+        eventBus.emit('alert:clear');
+        HUDController.addLog('[ALERT] Emergency protocol disengaged. Systems normal.', 'success');
+        break;
+
+      case 'TOGGLE_TRAJECTORY':
+      case 'TRAJECTORY':
+        eventBus.emit('trajectory:toggle');
+        HUDController.addLog('[TACTICAL] Toggled orbital trajectory visualization.', 'info');
+        break;
+
+      case 'MUTE':
+        soundFX.muted = true;
+        soundFX.stopAlarm();
+        HUDController.addLog('[AUDIO] Web Audio synthesizer muted.', 'info');
+        break;
+
+      case 'UNMUTE':
+        soundFX.muted = false;
+        HUDController.addLog('[AUDIO] Web Audio synthesizer unmuted.', 'info');
         break;
 
       case 'CLEAR':

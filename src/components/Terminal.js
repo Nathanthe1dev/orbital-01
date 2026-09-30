@@ -1,4 +1,5 @@
 import { CommandProcessor } from '../simulation/Commands.js';
+import { soundFX } from '../core/SoundFX.js';
 
 export class TerminalController {
   constructor() {
@@ -13,6 +14,11 @@ export class TerminalController {
   initListeners() {
     if (!this.form || !this.input) return;
 
+    // Play subtle keypress audio feedback on typing
+    this.input.addEventListener('input', () => {
+      soundFX.playKeypress();
+    });
+
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();
       const command = this.input.value;
@@ -25,7 +31,6 @@ export class TerminalController {
       }
     });
 
-    // Arrow key command history navigation (Up / Down)
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowUp') {
         e.preventDefault();
