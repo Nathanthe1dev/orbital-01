@@ -2,6 +2,7 @@ import { store } from '../core/State.js';
 import { eventBus } from '../core/EventBus.js';
 import { HUDController } from '../components/HUD.js';
 import { soundFX } from '../core/SoundFX.js';
+import { audioEngine } from '../core/AudioEngine.js';
 
 export class CommandProcessor {
   static execute(rawCmd) {
@@ -38,6 +39,8 @@ export class CommandProcessor {
         HUDController.addLog('  FIRE / ENGAGE    - Discharge forward plasma cannons', 'info');
         HUDController.addLog('  AUTO_DEFENSE     - Toggle automated threat tracking', 'info');
         HUDController.addLog('  SPAWN_HAZARDS    - Respawn asteroid debris hazards', 'info');
+        HUDController.addLog('  PLAY_SFX         - Synthesize test sound (LASER | EXPLOSION | LOCK)', 'info');
+        HUDController.addLog('  AUDIO_BOOST      - Set master synthesizer volume gain (0.0 to 1.0)', 'info');
         break;
 
       case 'INSPECT_TARGET':
@@ -224,6 +227,37 @@ export class CommandProcessor {
       case 'BRAKE':
         eventBus.emit('flight:halt');
         HUDController.addLog('[FLIGHT] Counter-thrusters fired. Vessel momentum zeroed.', 'alert');
+        break;
+      
+      case 'PLAY_SFX':
+        if (arg === 'LASER' || arg === 'CANNON') {
+          audioEngine.playLaser();
+          HUDController.addLog('[AUDIO] Triggered plasma cannon test wave.', 'info');
+        } else if (arg === 'EXPLOSION' || arg === 'IMPACT') {
+          audioEngine.playExplosion();
+          HUDController.addLog('[AUDIO] Triggered explosion rumble wave.', 'info');
+        } else if (arg === 'LOCK') {
+          audioEngine.playTargetLock();
+          HUDController.addLog('[AUDIO] Triggered target lock audio ping.', 'info');
+        } else {
+          HUDController.addLog('USAGE: PLAY_SFX <LASER | EXPLOSION | LOCK>', 'alert');
+        }
+        break;
+
+      case 'AUDIO_BOOST':
+        const vol = parseFloat(arg);
+        if (!isNaN(vol)) {
+          audioEngine.setVolume(vol);
+          HUDController.addLog(`[AUDIO] Master gain volume adjusted to ${vol}`, 'info');
+        } else {
+          HUDController.addLog('USAGE: AUDIO_BOOST <NUMBER (0.0 to 1.0)>', 'alert');
+        }
+        break;
+
+      case 'MUTE':
+      case 'UNMUTE':
+        const muted = audioEngine.toggleMute();
+        HUDController.addLog(`[AUDIO] Audio synthesizer ${muted ? 'MUTED' : 'UNMUTED'}.`, 'info');
         break;
 
       default:

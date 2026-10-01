@@ -14,12 +14,13 @@ import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
 import { RadarController } from './components/Radar.js';
 import { InspectorModalController } from './components/InspectorModal.js';
+import { AudioVisualizerController } from './components/AudioVisualizer.js';
 import { WarpDriveManager } from './simulation/WarpDrive.js';
 import { initPostProcessing } from './core/PostProcessing.js';
 import { initRaycaster } from './core/Raycaster.js';
+import { audioEngine } from './core/AudioEngine.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
-import './core/SoundFX.js';
 
 // 1. Canvas & WebGL Setup
 const canvas = document.querySelector('#webgl-canvas');
@@ -104,15 +105,23 @@ scene.add(trajectories);
 let asteroidField = createAsteroidField(16);
 scene.add(asteroidField);
 
-// 5. Flight & Combat Mechanics
+// 5. Flight, Weapons & Audio Synthesis
 const flightController = new FlightController(spacecraft, camera, controls);
 const weaponSystem = new PlasmaWeaponSystem(scene, spacecraft);
 let activeTargetLock = null;
 
-eventBus.on('weapons:fire', () => weaponSystem.fire(activeTargetLock));
+eventBus.on('weapons:fire', () => {
+  weaponSystem.fire(activeTargetLock);
+  audioEngine.playLaser();
+});
+
 eventBus.on('weapons:engage_locked', () => {
-  if (activeTargetLock) weaponSystem.fire(activeTargetLock);
-  else HUDController.addLog('No target lock acquired for engagement.', 'alert');
+  if (activeTargetLock) {
+    weaponSystem.fire(activeTargetLock);
+    audioEngine.playLaser();
+  } else {
+    HUDController.addLog('No target lock acquired for engagement.', 'alert');
+  }
 });
 
 eventBus.on('hazards:respawn', () => {
@@ -142,13 +151,16 @@ const radar = new RadarController('#radar-canvas', () => {
 }, 35);
 
 new InspectorModalController();
+const audioVisualizer = new AudioVisualizerController('#audio-visualizer-canvas');
 
-// 7. Raycasting & Locking
+// 7. Raycaster Interactivity
 const interactiveObjects = [spacecraft, planet, anomaly, ...asteroidField.userData.asteroids];
 initRaycaster(camera, canvas, interactiveObjects);
 
 function focusTarget(target) {
   activeTargetLock = target;
+  audioEngine.playTargetLock();
+
   const targetPos = new THREE.Vector3();
   target.getWorldPosition(targetPos);
 
@@ -184,7 +196,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Flight steering physics & manual navigation online.', 'info');
+HUDController.addLog('Spatial Web Audio synthesizer & HUD equalizer online.', 'info');
 
 const clock = new THREE.Clock();
 
@@ -194,11 +206,13 @@ function animate() {
 
   controls.update();
 
-  // Update Ship & Systems
   if (!flightController.enabled) {
     spacecraft.userData.update(elapsedTime);
   }
   flightController.update(delta);
+
+  // Dynamically shift ambient engine pitch with velocity
+  audioEngine.updateEnginePitch(flightController.velocity.length());
 
   thrusterParticles.userData.update(elapsedTime);
   planet.userData.update(elapsedTime);
@@ -206,7 +220,9 @@ function animate() {
   trajectories.userData.update(elapsedTime);
   asteroidField.userData.update(delta);
   weaponSystem.update(delta, asteroidField.userData.asteroids);
+
   radar.update();
+  audioVisualizer.update();
 
   postProcessing.composer.render();
   requestAnimationFrame(animate);
