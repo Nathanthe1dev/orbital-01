@@ -21,10 +21,12 @@ import { initPostProcessing } from './core/PostProcessing.js';
 import { initRaycaster } from './core/Raycaster.js';
 import { StorageEngine } from './core/Storage.js';
 import { audioEngine } from './core/AudioEngine.js';
+import { FXEngine } from './core/FXEngine.js';
+import { PerformanceOptimizer } from './core/Optimizer.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
 
-// 1. Canvas & WebGL Setup
+// 1. WebGL & Renderer Setup
 const canvas = document.querySelector('#webgl-canvas');
 const scene = new THREE.Scene();
 
@@ -43,12 +45,10 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance'
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+PerformanceOptimizer.configureRenderer(renderer);
 
 const postProcessing = initPostProcessing(renderer, scene, camera);
-
-eventBus.on('bloom:toggle', () => postProcessing.toggleBloom());
-eventBus.on('bloom:intensity', (val) => postProcessing.setIntensity(val));
+const fxEngine = new FXEngine(camera);
 
 // 2. Controls & Lighting
 const controls = new OrbitControls(camera, canvas);
@@ -66,7 +66,7 @@ const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
 rimLight.position.set(-10, -5, -10);
 scene.add(rimLight);
 
-// 3. Starfield Background
+// 3. Starfield
 const starCount = 2500;
 const starGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(starCount * 3);
@@ -107,49 +107,41 @@ scene.add(trajectories);
 let asteroidField = createAsteroidField(16);
 scene.add(asteroidField);
 
-// 5. Flight, Combat & Mission Systems
+// 5. Flight, Weapons & FX Integration
 const flightController = new FlightController(spacecraft, camera, controls);
 const weaponSystem = new PlasmaWeaponSystem(scene, spacecraft);
 const missionManager = new MissionManager();
 let activeTargetLock = null;
 
-// Connect Weapon Destruction Event to Mission Manager
-const originalUpdateWeapons = weaponSystem.update.bind(weaponSystem);
-weaponSystem.update = (delta, targetables) => {
-  targetables.forEach((t) => {
-    if (t.visible && t.userData.health <= 0) {
-      eventBus.emit('hazard:destroyed');
-    }
-  });
-  originalUpdateWeapons(delta, targetables);
-};
-
 eventBus.on('weapons:fire', () => {
   weaponSystem.fire(activeTargetLock);
   audioEngine.playLaser();
+  fxEngine.shake(0.12, 0.2);
 });
 
 eventBus.on('weapons:engage_locked', () => {
   if (activeTargetLock) {
     weaponSystem.fire(activeTargetLock);
     audioEngine.playLaser();
+    fxEngine.shake(0.15, 0.25);
   } else {
     HUDController.addLog('No target lock acquired for engagement.', 'alert');
   }
 });
 
-eventBus.on('hazards:respawn', () => {
-  scene.remove(asteroidField);
-  asteroidField = createAsteroidField(16);
-  scene.add(asteroidField);
+eventBus.on('hazard:destroyed', () => {
+  audioEngine.playExplosion();
+  fxEngine.shake(0.35, 0.4);
+  fxEngine.triggerDamageFlash();
+});
+
+eventBus.on('red_alert:toggle', (active) => {
+  fxEngine.setAlertState(active);
 });
 
 // Storage System Listeners
 eventBus.on('state:save', () => StorageEngine.save(missionManager));
 eventBus.on('state:load', () => StorageEngine.load(missionManager));
-eventBus.on('state:modified', () => StorageEngine.save(missionManager));
-
-// Restore saved state on boot if present
 StorageEngine.load(missionManager);
 missionManager.updateHUDWidget();
 
@@ -219,7 +211,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Mission directive engine & LocalStorage persistence online.', 'info');
+HUDController.addLog('ORBITAL-01 Command Bridge fully operational.', 'success');
 
 const clock = new THREE.Clock();
 
