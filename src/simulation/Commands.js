@@ -3,6 +3,7 @@ import { eventBus } from '../core/EventBus.js';
 import { HUDController } from '../components/HUD.js';
 import { soundFX } from '../core/SoundFX.js';
 import { audioEngine } from '../core/AudioEngine.js';
+import { StorageEngine } from '../core/Storage.js';
 
 export class CommandProcessor {
   static execute(rawCmd) {
@@ -41,6 +42,10 @@ export class CommandProcessor {
         HUDController.addLog('  SPAWN_HAZARDS    - Respawn asteroid debris hazards', 'info');
         HUDController.addLog('  PLAY_SFX         - Synthesize test sound (LASER | EXPLOSION | LOCK)', 'info');
         HUDController.addLog('  AUDIO_BOOST      - Set master synthesizer volume gain (0.0 to 1.0)', 'info');
+        HUDController.addLog('  MISSIONS         - Display active tactical directives and quest status', 'info');
+        HUDController.addLog('  SAVE_GAME        - Save current telemetry & mission state to local storage', 'info');
+        HUDController.addLog('  LOAD_GAME        - Load saved telemetry & mission state', 'info');
+        HUDController.addLog('  RESET_DATA       - Clear local cache and restore defaults', 'info');
         break;
 
       case 'INSPECT_TARGET':
@@ -258,6 +263,26 @@ export class CommandProcessor {
       case 'UNMUTE':
         const muted = audioEngine.toggleMute();
         HUDController.addLog(`[AUDIO] Audio synthesizer ${muted ? 'MUTED' : 'UNMUTED'}.`, 'info');
+        break;
+
+      case 'MISSIONS':
+      case 'OBJECTIVES':
+        eventBus.emit('missions:get');
+        break;
+
+      case 'SAVE_GAME':
+      case 'SAVE':
+        eventBus.emit('state:save');
+        break;
+
+      case 'LOAD_GAME':
+      case 'LOAD':
+        eventBus.emit('state:load');
+        break;
+
+      case 'RESET_DATA':
+      case 'WIPE':
+        StorageEngine.reset();
         break;
 
       default:

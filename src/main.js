@@ -10,6 +10,7 @@ import { createAsteroidField } from './scene/Asteroids.js';
 import { PlasmaWeaponSystem } from './scene/Weapons.js';
 import { FlightController } from './simulation/FlightController.js';
 import { TelemetryEngine } from './simulation/Telemetry.js';
+import { MissionManager } from './simulation/MissionManager.js';
 import { HUDController } from './components/HUD.js';
 import { TerminalController } from './components/Terminal.js';
 import { RadarController } from './components/Radar.js';
@@ -18,6 +19,7 @@ import { AudioVisualizerController } from './components/AudioVisualizer.js';
 import { WarpDriveManager } from './simulation/WarpDrive.js';
 import { initPostProcessing } from './core/PostProcessing.js';
 import { initRaycaster } from './core/Raycaster.js';
+import { StorageEngine } from './core/Storage.js';
 import { audioEngine } from './core/AudioEngine.js';
 import { eventBus } from './core/EventBus.js';
 import { store } from './core/State.js';
@@ -105,10 +107,22 @@ scene.add(trajectories);
 let asteroidField = createAsteroidField(16);
 scene.add(asteroidField);
 
-// 5. Flight, Weapons & Audio Synthesis
+// 5. Flight, Combat & Mission Systems
 const flightController = new FlightController(spacecraft, camera, controls);
 const weaponSystem = new PlasmaWeaponSystem(scene, spacecraft);
+const missionManager = new MissionManager();
 let activeTargetLock = null;
+
+// Connect Weapon Destruction Event to Mission Manager
+const originalUpdateWeapons = weaponSystem.update.bind(weaponSystem);
+weaponSystem.update = (delta, targetables) => {
+  targetables.forEach((t) => {
+    if (t.visible && t.userData.health <= 0) {
+      eventBus.emit('hazard:destroyed');
+    }
+  });
+  originalUpdateWeapons(delta, targetables);
+};
 
 eventBus.on('weapons:fire', () => {
   weaponSystem.fire(activeTargetLock);
@@ -129,6 +143,15 @@ eventBus.on('hazards:respawn', () => {
   asteroidField = createAsteroidField(16);
   scene.add(asteroidField);
 });
+
+// Storage System Listeners
+eventBus.on('state:save', () => StorageEngine.save(missionManager));
+eventBus.on('state:load', () => StorageEngine.load(missionManager));
+eventBus.on('state:modified', () => StorageEngine.save(missionManager));
+
+// Restore saved state on boot if present
+StorageEngine.load(missionManager);
+missionManager.updateHUDWidget();
 
 // 6. Subsystem Controllers
 const warpDrive = new WarpDriveManager(camera, starfield);
@@ -196,7 +219,7 @@ new TerminalController();
 const telemetry = new TelemetryEngine();
 telemetry.start();
 
-HUDController.addLog('Spatial Web Audio synthesizer & HUD equalizer online.', 'info');
+HUDController.addLog('Mission directive engine & LocalStorage persistence online.', 'info');
 
 const clock = new THREE.Clock();
 
@@ -211,7 +234,6 @@ function animate() {
   }
   flightController.update(delta);
 
-  // Dynamically shift ambient engine pitch with velocity
   audioEngine.updateEnginePitch(flightController.velocity.length());
 
   thrusterParticles.userData.update(elapsedTime);
