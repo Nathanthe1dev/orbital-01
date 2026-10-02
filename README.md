@@ -2,62 +2,57 @@
 
 [![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-r160-000000?style=flat-square&logo=three.js&logoColor=white)](https://threejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-00C8FF?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/Tactical_Status-ONLINE-00FF88?style=flat-square)]()
+[![GitHub Pages](https://img.shields.io/badge/Deployment-GitHub_Pages-22c55e?style=flat-square&logo=github)](https://nathanthe1dev.github.io/orbital-01/)
+[![Status](https://img.shields.io/badge/Bridge_Status-OPERATIONAL-00c8ff?style=flat-square)]()
 
 > **TRANSMISSION INCOMING...**  
-> Welcome aboard **ORBITAL-01**, a high-performance WebGL 3D space flight simulator and tactical command bridge running natively in your browser. Built on raw Three.js mathematical transforms, Web Audio DSP, and reactive HUD telemetry. 
+> Welcome to **ORBITAL-01**, an interactive WebGL 3D space flight simulator and tactical command bridge running natively in your browser. Powered by **Three.js**, **Vite**, **GSAP**, and modular HUD components.
+
+🌐 **Live Demo:** [nathanthe1dev.github.io/orbital-01](https://nathanthe1dev.github.io/orbital-01/)
 
 ---
 
-## 🛰️ Mission Parameters & Architecture Highlights
+## 🛰️ Core Features & Subsystems
 
-* **6-DoF Physics Flight Model**: Switch seamlessly from orbital camera navigation to direct manual vector piloting with linear inertia, thruster particle dynamics, and velocity damping.
-* **Dual Plasma Cannon System**: Forward-firing projectile ballistics calculated relative to the ship's current velocity vector ($V_{bolt} = V_{ship} + V_{relative}$), featuring collision detection against Class-C asteroid hazards.
-* **Tactical 2D Radar Canvas**: Real-time relative spatial projection mapping celestial bodies, anomalies, and hostile hazards onto a multi-ring radial sweep grid.
-* **Command Terminal CLI**: Keyboard-driven command prompt complete with input buffer history (`Up`/`Down`), event routing, and state overrides.
-* **Target Analysis & Inspection**: Raycaster cursor mapping to lock onto 3D world entities, calculate relative AU distance, and project object telemetry modals.
-* **Dynamic Audio Spectrum Matrix**: Custom Web Audio API synthesizer engine generating real-time thruster pitch shifts, target lock audio feedback, and audio spectrum matrix visualizer bars.
-* **Persistent Bridge State**: Client-side storage layer for saving/restoring mission directives, telemetry logs, and bridge overrides.
-
----
-
-## 🛠️ Tech Stack Matrix
-
-| Core Engine | Renderer & Math | UI Layer | Audio & FX | Build Pipeline |
-| :--- | :--- | :--- | :--- | :--- |
-| **JavaScript ES6+** | **Three.js** (WebGL) | **HTML5 Canvas / CSS3** | **Web Audio API** | **Vite** |
-| Event Bus Architecture | GSAP Animations | Monospace HUD overlay | Real-time Synthesizer | **`gh-pages`** deployment |
+* **3D Celestial Scene & Entities**: Rendered high-performance WebGL environment featuring the `ORBITAL-01` flagship cruiser, exoplanet `KEPLER-186F`, pulsating `QUANTUM SINGULARITY` anomaly, orbit trajectory rings, and a dynamic asteroid hazard field.
+* **Raycast Targeting & Inspector Modal**: Click on any celestial object or asteroid in 3D space to lock target. GSAP smoothly focuses the camera while opening the **Target Analysis & Inspector Modal** displaying real-time distance (AU), structural integrity, and status.
+* **Interactive Terminal CLI**: Fully functional command-line terminal with command history buffer (`Up`/`Down` arrows) to execute system-wide ship commands.
+* **2D Tactical Radar Canvas**: Dynamic 2D radar widget rendering real-time relative spatial coordinates for the flagship, planet, anomaly, and surrounding asteroid hazards.
+* **Manual Flight & Weapons System**: Toggle manual piloting mode (`FLIGHT`) to navigate the vessel using WASD + Altitude controls, and discharge plasma cannon bolts (`F` key) with collision detection against asteroid hazards.
+* **Subsystem Visual Effects**: Full-screen Red Alert pulsing mode, screen camera shake FX on weapon impact/hazard destruction, and starfield warp drive particle contraction.
+* **Audio Spectrum Matrix**: Dynamic HUD visualizer widget rendering active audio matrix frequency animations.
+* **Persistent Bridge State**: Integrated LocalStorage manager to save and load mission telemetry, state logs, and status parameters.
 
 ---
 
-## 🕹️ Flight Deck Keybindings
+## 🕹️ Flight Deck & Navigation Controls
 
-| Input | Action Mode | Subsystem |
+| Input / Action | System Mode | Function |
 | :--- | :--- | :--- |
-| **`W` / `S`** | Pitch Forward / Reverse Thrust | Flight Controller |
-| **`A` / `D`** | Yaw / Roll Thrust Vector | Flight Controller |
-| **`SPACE` / `LEFT SHIFT`** | Strafe Altitude Up / Down | Flight Controller |
-| **`F`** | Discharge Dual Plasma Cannons | Weapon Systems |
-| **`LEFT MOUSE`** | Raycast Object Inspection & Target Lock | Tactical Targeting |
-| **`RIGHT MOUSE DRAG`** | 360° Free Look Camera Orbit | Orbit Controls |
+| **`LEFT CLICK` (on 3D Object)** | Global | Raycast inspect object & acquire camera lock |
+| **`RIGHT CLICK + DRAG`** | Global | 360° Free look orbit camera controls |
+| **`MOUSE WHEEL`** | Global | Camera zoom in / out |
+| **`W` / `S`** | Manual Flight | Translate Forward / Backward |
+| **`A` / `D`** | Manual Flight | Translate Left / Right |
+| **`SPACE` / `LEFT SHIFT`** | Manual Flight | Translate Altitude Up / Down |
+| **`F`** | Manual Flight | Discharge plasma cannons |
+| **`UP` / `DOWN` ARROW KEYS** | Terminal CLI | Navigate command history buffer |
 
 ---
 
-## 💻 Tactical Terminal CLI Commands
+## 💻 Command Terminal CLI Directory
 
-Open the command prompt at the bottom left of your HUD and feed parameters directly into the ship's mainframe:
+Type commands directly into the CLI input prompt at the bottom left of the bridge:
 
 ```bash
-# Terminal Command Directory
+# Terminal Mainframe Directory
 
-HELP            # Displays available subsystem commands
-MANUAL_FLIGHT   # Toggles WASD flight controller & 6-DoF mode
-FIRE            # Fires plasma cannon bolts directly from command deck
-WARP            # Engages hyper-drive starfield particle contraction
-RED_ALERT       # Toggles red alert visual overrides & status flashers
-RESET           # Resets orbital camera back to central ship origin
-SAVE            # Persists current flight & mission state to local storage
-LOAD            # Restores previous bridge state snapshot
-CLEAR           # Flushes terminal log buffer
-
+HELP            # Display list of available bridge commands
+FLIGHT          # Toggle WASD manual flight mode (or MANUAL_FLIGHT)
+FIRE            # Discharge dual plasma cannon bolts
+WARP            # Engage / disengage warp drive speed animation
+RED_ALERT       # Toggle red alert visual status pulse (or ALERT)
+RESET           # Reset camera focus back to orbital vessel center (or CAMERA)
+SAVE            # Persist current mission state to browser storage
+LOAD            # Restore saved state snapshot from storage
+CLEAR           # Flush terminal console log screen (or CLS)
