@@ -1,99 +1,63 @@
-Working Prototype is under development!
+# 🚀 ORBITAL-01 // Bridge & Flight Simulator
 
-# 🛰️ ORBITAL-01 // Deep Space Mission Control Interface
+[![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Three.js](https://img.shields.io/badge/Three.js-r160-000000?style=flat-square&logo=three.js&logoColor=white)](https://threejs.org/)
+[![License](https://img.shields.io/badge/License-MIT-00C8FF?style=flat-square)](LICENSE)
+[![Status](https://img.shields.io/badge/Tactical_Status-ONLINE-00FF88?style=flat-square)]()
 
-> *An interactive 3D WebGL deep-space mission control terminal built with Vanilla JavaScript and Three.js.*
-
----
-
-## 🪐 Overview
-
-**ORBITAL-01: The Last Signal** is a web-based aerospace mission control platform. As mission controller, the user monitors an unmanned deep-space vessel that has encountered an unexplained signal at the edge of known space.
-
-The application combines high-performance 3D WebGL rendering with a tactical glassmorphism HUD overlay to simulate live telemetry, interactive spacecraft operations, and an unfolding deep-space narrative.
+> **TRANSMISSION INCOMING...**  
+> Welcome aboard **ORBITAL-01**, a high-performance WebGL 3D space flight simulator and tactical command bridge running natively in your browser. Built on raw Three.js mathematical transforms, Web Audio DSP, and reactive HUD telemetry. 
 
 ---
 
-## ✨ Key Features
+## 🛰️ Mission Parameters & Architecture Highlights
 
-*   **3D Space Engine:** Lightweight WebGL scene featuring procedural starfields, dynamic camera controls, and custom lighting.
-*   **Tactical HUD Interface:** Glassmorphism UI panels with real-time system status indicators.
-*   **Live Telemetry Engine:** Mathematical simulation of fuel, power, signal strength, hull integrity, and environment parameters.
-*   **Mission Command Terminal:** Interactive command line interface to execute diagnostic scans, vessel rotations, shield activation, and Earth pings.
-*   **Dynamic Alert System:** Simulated space hazards including solar flares, micrometeoroid impacts, and signal dropouts.
-*   **Deep Space Narrative:** Decryptable transmission logs revealing an unfolding space mystery.
-
----
-
-## 🛠️ Tech Stack
-
-*   **Core:** HTML5, CSS3 (Modern CSS Variables & Grid), JavaScript (ES Modules)
-*   **3D / Graphics:** [Three.js](https://threejs.org/) (WebGL Render Engine)
-*   **Animation:** [GSAP](https://greensock.com/gsap/)
-*   **Build Tool & Dev Server:** [Vite](https://vitejs.dev/)
-*   **Version Control:** Git & GitHub
+* **6-DoF Physics Flight Model**: Switch seamlessly from orbital camera navigation to direct manual vector piloting with linear inertia, thruster particle dynamics, and velocity damping.
+* **Dual Plasma Cannon System**: Forward-firing projectile ballistics calculated relative to the ship's current velocity vector ($V_{bolt} = V_{ship} + V_{relative}$), featuring collision detection against Class-C asteroid hazards.
+* **Tactical 2D Radar Canvas**: Real-time relative spatial projection mapping celestial bodies, anomalies, and hostile hazards onto a multi-ring radial sweep grid.
+* **Command Terminal CLI**: Keyboard-driven command prompt complete with input buffer history (`Up`/`Down`), event routing, and state overrides.
+* **Target Analysis & Inspection**: Raycaster cursor mapping to lock onto 3D world entities, calculate relative AU distance, and project object telemetry modals.
+* **Dynamic Audio Spectrum Matrix**: Custom Web Audio API synthesizer engine generating real-time thruster pitch shifts, target lock audio feedback, and audio spectrum matrix visualizer bars.
+* **Persistent Bridge State**: Client-side storage layer for saving/restoring mission directives, telemetry logs, and bridge overrides.
 
 ---
 
-## ⚡ Getting Started
+## 🛠️ Tech Stack Matrix
 
-### Prerequisites
-
-Ensure you have [Node.js](https://nodejs.org/) (v16 or higher) installed.
-
-### Installation & Local Setup
-
-1. **Clone the repository:**
-bash
-git clone https://github.com/Nathanthe1dev/orbital-01.git
-cd orbital-01
-
-2. **Install dependencies:**
-bash
-npm install
-
-3. **Start the local development server:**
-bash
-npm run dev
-
-4. Open the local address printed in your terminal (e.g., `http://localhost:5173`) in your browser.
+| Core Engine | Renderer & Math | UI Layer | Audio & FX | Build Pipeline |
+| :--- | :--- | :--- | :--- | :--- |
+| **JavaScript ES6+** | **Three.js** (WebGL) | **HTML5 Canvas / CSS3** | **Web Audio API** | **Vite** |
+| Event Bus Architecture | GSAP Animations | Monospace HUD overlay | Real-time Synthesizer | **`gh-pages`** deployment |
 
 ---
 
-## 📐 Architecture Overview
+## 🕹️ Flight Deck Keybindings
 
-This project uses a modular **Vanilla ES Engine Architecture** driven by an **Event Bus (Pub/Sub pattern)** to keep the application decoupled and performant:
-
-text
-┌─────────────────────────┐
-│      EventBus.js        │
-│   (Pub/Sub Engine)      │
-└────────────▲────────────┘
-│
-┌───────────────────────────┼───────────────────────────┐
-│                           │                           │
-┌────┴────────────┐    ┌─────────┴─────────┐    ┌────────────┴────────┐
-│  SceneManager   │    │ Telemetry & State │    │  UI & HUD Overlay   │
-│   (Three.js)    │    │ (Simulation Engine)│    │    (DOM Engine)     │
-└─────────────────┘    └───────────────────┘    └─────────────────────┘
+| Input | Action Mode | Subsystem |
+| :--- | :--- | :--- |
+| **`W` / `S`** | Pitch Forward / Reverse Thrust | Flight Controller |
+| **`A` / `D`** | Yaw / Roll Thrust Vector | Flight Controller |
+| **`SPACE` / `LEFT SHIFT`** | Strafe Altitude Up / Down | Flight Controller |
+| **`F`** | Discharge Dual Plasma Cannons | Weapon Systems |
+| **`LEFT MOUSE`** | Raycast Object Inspection & Target Lock | Tactical Targeting |
+| **`RIGHT MOUSE DRAG`** | 360° Free Look Camera Orbit | Orbit Controls |
 
 ---
 
-## 📋 Development Roadmap
+## 💻 Tactical Terminal CLI Commands
 
-*   [x] **Day 1:** Project scaffolding, Vite setup, WebGL baseline, dynamic starfield, HUD overlay.
-*   [ ] **Day 2:** Procedural spacecraft geometry & 3D celestial planet with atmosphere.
-*   [ ] **Day 3:** Full HUD glassmorphism layout & responsive telemetry panels.
-*   [ ] **Day 4:** State management store, EventBus, and real-time mathematical telemetry drift.
-*   [ ] **Day 5:** Interactive mission terminal & command parser execution system.
-*   [ ] **Day 6:** Automated random system events engine & alert notifications.
-*   [ ] **Day 7:** Mystery signal transmission log decryption & narrative triggers.
-*   [ ] **Day 8:** Web Audio API sound effects & post-processing UI visual polish.
-*   [ ] **Day 9:** Documentation, architecture diagramming, and performance optimization.
-*   [ ] **Day 10:** Final QA profiling and live deployment.
+Open the command prompt at the bottom left of your HUD and feed parameters directly into the ship's mainframe:
 
----
+```bash
+# Terminal Command Directory
 
-## 📄 License
+HELP            # Displays available subsystem commands
+MANUAL_FLIGHT   # Toggles WASD flight controller & 6-DoF mode
+FIRE            # Fires plasma cannon bolts directly from command deck
+WARP            # Engages hyper-drive starfield particle contraction
+RED_ALERT       # Toggles red alert visual overrides & status flashers
+RESET           # Resets orbital camera back to central ship origin
+SAVE            # Persists current flight & mission state to local storage
+LOAD            # Restores previous bridge state snapshot
+CLEAR           # Flushes terminal log buffer
 
-Distributed under the MIT License. See `LICENSE` for more information.
