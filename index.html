@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORBITAL-01 // Deep Space Mission Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/orbital-01/assets/index-Ciej6l1c.js"></script>
+    <link rel="stylesheet" crossorigin href="/orbital-01/assets/index-Ca8mB6ZA.css">
+  </head>
+  <body>
+    <!-- 3D WebGL Canvas Layer -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Center Aiming Reticle -->
+    <div class="target-reticle">
+      <div class="reticle-corner top-left"></div>
+      <div class="reticle-corner top-right"></div>
+      <div class="reticle-corner bottom-left"></div>
+      <div class="reticle-corner bottom-right"></div>
+      <div class="reticle-crosshair"></div>
+    </div>
+
+    <!-- UI HUD Overlay Container -->
+    <div id="app-hud">      
+      <!-- Top Control Header -->
+      <header class="hud-header">
+        <div class="header-section">
+          <span class="mission-id">VESSEL: ORBITAL-01</span>
+          <span class="vessel-coord">LOC: [14.82, -89.10, 42.03] AU</span>
+        </div>
+        
+        <div class="header-section clock-section">
+          <span class="clock-label">MET:</span>
+          <span id="met-clock">000:00:00:00</span>
+        </div>
+
+        <div class="header-section">
+          <div class="system-status">
+            <span class="status-dot"></span>
+            <span id="system-status-text">SYSTEM ONLINE</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main HUD Grid Layout -->
+      <main class="hud-main">
+        <!-- Left Telemetry Panel -->
+        <aside class="hud-panel panel-left">
+          <div class="panel-header">SYS_TELEMETRY // ALPHA</div>
+          
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">HULL INTEGRITY</span>
+              <span class="card-value" id="val-hull">100%</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="bar-hull" style="width: 100%;"></div></div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">CORE POWER</span>
+              <span class="card-value" id="val-power">98.4%</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="bar-power" style="width: 98.4%;"></div></div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">FUEL RESERVES</span>
+              <span class="card-value" id="val-fuel">84.2%</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="bar-fuel" style="width: 84.2%;"></div></div>
+          </div>
+        </aside>
+
+        <!-- Right Telemetry Panel -->
+        <aside class="hud-panel panel-right">
+          <div class="panel-header">SYS_TELEMETRY // BETA</div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">SIGNAL STRENGTH</span>
+              <span class="card-value" id="val-signal">42.0%</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="bar-signal" style="width: 42%;"></div></div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">OXYGEN SUPPLY</span>
+              <span class="card-value" id="val-oxygen">99.1%</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="bar-oxygen" style="width: 99.1%;"></div></div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-meta">
+              <span class="card-label">CORE TEMP</span>
+              <span class="card-value" id="val-temp">294.2 K</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill temp-fill" id="bar-temp" style="width: 60%;"></div></div>
+          </div>
+
+          <div class="telemetry-item audio-visualizer-box">
+            <div class="telemetry-label">AUDIO SPECTRUM MATRIX</div>
+            <canvas id="audio-visualizer-canvas"></canvas>
+          </div>
+        </aside>
+      </main>
+
+      <!-- Bottom Terminal Container Shell -->
+      <footer class="hud-footer">
+        <div class="hud-panel terminal-panel">
+          <div class="panel-header">COMMAND TERMINAL & LOGS</div>
+          <div class="terminal-shell" id="terminal-output">
+            <div class="log-line info">[SYS_INIT] ORBITAL-01 WebGL telemetry engine initialized...</div>
+            <div class="log-line info">[SYS_INIT] Orbital coordinates locked. Target acquired.</div>
+            <div class="log-line warning">[SIGNAL] Unidentified deep space pulse detected at 14.82 GHz.</div>
+          </div>
+          <form id="terminal-form" class="terminal-input-line">
+            <span class="prompt-symbol">&gt;</span>
+            <input 
+              type="text" 
+              id="terminal-input" 
+              placeholder="TYPE A COMMAND (OR 'HELP')..." 
+              autocomplete="off" 
+              spellcheck="false"
+            />
+          </form>
+        </div>
+      </footer>
+      
+      <div id="radar-container" class="hud-panel">
+        <div class="radar-header">TACTICAL RADAR</div>
+          <canvas id="radar-canvas"></canvas>
+      </div>
+
+      <div id="inspector-modal" class="hud-panel modal-overlay">
+        <div class="modal-header">
+          <span class="modal-tag">// TACTICAL TARGET INSPECTOR</span>
+          <button id="inspector-close-btn" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <h2 id="inspector-title">TARGET NAME</h2>
+          <div class="modal-meta">
+            <span id="inspector-type">CLASS: UNKNOWN</span>
+            <span id="inspector-distance">DISTANCE: -- AU</span>
+          </div>
+          <p id="inspector-details" class="modal-description">
+            Awaiting target analysis data...
+          </p>
+        </div>
+      </div>
+
+      <div id="mission-widget" class="hud-panel">
+        <div class="mission-header">// ACTIVE MISSION DIRECTIVE</div>
+        <div id="mission-content">
+          <div class="mission-title">INITIALIZING DIRECTIVES...</div>
+          <div class="mission-desc">Scanning orbit data...</div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
